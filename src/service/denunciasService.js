@@ -2,49 +2,71 @@ import { supabase } from "../db/supaClient.js";
 import { RespuestaContext } from "../strategies/RespuestaContext.js";
 import { RespuestaConductor } from "../strategies/RespuestaConductor.js";
 import { RespuestaEstacion } from "../strategies/RespuestaEstacion.js";
-import { RespuestaServicio } from "../strategies/RespuestaServicio.js"
+import { RespuestaServicio } from "../strategies/RespuestaServicio.js";
 
-export const crearDenuncia = async(info) => {
-    const idcuenta = info.idcuenta;
-    const mensaje = info.mensaje;
-    const fecha = new Date().toISOString().split("T")[0]
-    const estado = "pendiente"; 
-    const respuesta = null;
-    const tipo = info.tipo;
+export const crearDenuncia = async (info) => {
+  const idcuenta = info.idcuenta;
+  const mensaje = info.mensaje;
+  const fecha = new Date().toISOString().split("T")[0];
+  const estado = "pendiente";
+  const respuesta = null;
+  const tipo = info.tipo;
 
-    return await supabase.from('denuncias')
-    .insert({idcuenta, mensaje, fecha, estado, tipo, respuesta}).select('*');
-}
+  return await supabase
+    .from("denuncias")
+    .insert({ idcuenta, mensaje, fecha, estado, tipo, respuesta })
+    .select("*");
+};
 
-export const getDenuncias = async() => {
-    return await supabase.from('denuncias').select('*');
-}
+export const getDenuncias = async () => {
+  return await supabase.from("denuncias").select("*");
+};
 
-export const getDenunciasUsuario = async(usuarioId) => {
-    return await supabase.from('denuncias').select('*').eq('idcuenta', Number(usuarioId));
-}
+export const getDenunciasUsuario = async (usuarioId) => {
+  return await supabase
+    .from("denuncias")
+    .select("*")
+    .eq("idcuenta", Number(usuarioId));
+};
 
-export const getDeunciaUsuarioEspecifica = async(usuarioId, denunciaId) => {
-    return await supabase.from('denuncias').select('*').eq('idcuenta', usuarioId).eq('iddenuncia', denunciaId);
-}
+export const getDeunciaUsuarioEspecifica = async (usuarioId, denunciaId) => {
+  return await supabase
+    .from("denuncias")
+    .select("*")
+    .eq("idcuenta", usuarioId)
+    .eq("iddenuncia", denunciaId);
+};
 
-export const eliminarDenuncia = async(denunciaId) => {
-    return await supabase.from('denuncias').delete('*').eq('iddenuncia', Number(denunciaId));
-}
-
+export const eliminarDenuncia = async (denunciaId) => {
+  return await supabase
+    .from("denuncias")
+    .delete("*")
+    .eq("iddenuncia", Number(denunciaId));
+};
 
 //Esto lo hace el administrador
 
-export const actualizarEstadoDenuncia = async(info, id) => {
-    const estado = info;
-    if(estado!= "procesada") throw new Error("Error: Solo puede actualizar el estado manualmente a 'procesada'");
-    return await supabase.from('denuncias').update([{estado: estado}]).eq('iddenuncia', id);
-}
+export const actualizarEstadoDenuncia = async (info, id) => {
+  const estado = info;
+  if (estado != "procesada")
+    throw new Error(
+      "Error: Solo puede actualizar el estado manualmente a 'procesada'"
+    );
+  return await supabase
+    .from("denuncias")
+    .update([{ estado: estado }])
+    .eq("iddenuncia", id);
+};
 
-
-export const procesarRespuestaDenuncia = async (iddenuncia, idcuenta, respuestaTexto) => {
-  const { data: denunciaData, error: fetchError } =
-    await getDeunciaUsuarioEspecifica(idcuenta, iddenuncia);
+export const procesarRespuestaDenuncia = async (
+  iddenuncia,
+  idcuenta,
+  respuestaTexto
+) => {
+  const { data: denunciaData, error: fetchError } = await supabase
+    .from("denuncias")
+    .select("*")
+    .eq("iddenuncia", iddenuncia);
 
   if (fetchError || !denunciaData.length) {
     throw new Error("Denuncia no encontrada o no pertenece al usuario");
@@ -55,22 +77,32 @@ export const procesarRespuestaDenuncia = async (iddenuncia, idcuenta, respuestaT
   let strategy;
   switch (denuncia.tipo) {
     case "conductor":
-      strategy = new RespuestaConductor(); break;
+      strategy = new RespuestaConductor();
+      break;
     case "estacion":
-      strategy = new RespuestaEstacion(); break;
+      strategy = new RespuestaEstacion();
+      break;
     case "servicio":
-      strategy = new RespuestaServicio(); break;
+      strategy = new RespuestaServicio();
+      break;
     default:
       throw new Error("Tipo de denuncia no reconocido");
   }
 
   const context = new RespuestaContext(strategy);
-  const respuestaFormateada = await context.procesar(denuncia, { respuesta: respuestaTexto });
+  const respuestaFormateada = await context.procesar(denuncia, {
+    respuesta: respuestaTexto,
+  });
 
   const { error: updateError } = await supabase
-    .from('denuncias')
-    .update([{ respuesta: respuestaFormateada.data.respuesta, estado: respuestaFormateada.data.estado }])
-    .eq('iddenuncia', iddenuncia);
+    .from("denuncias")
+    .update([
+      {
+        respuesta: respuestaFormateada.data.respuesta,
+        estado: respuestaFormateada.data.estado,
+      },
+    ])
+    .eq("iddenuncia", iddenuncia);
 
   if (updateError) throw new Error(updateError.message);
 
