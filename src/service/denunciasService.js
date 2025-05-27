@@ -63,12 +63,17 @@ export const procesarRespuestaDenuncia = async (
   idcuenta,
   respuestaTexto
 ) => {
+  console.log("🟡 Iniciando procesamiento de denuncia", { iddenuncia, idcuenta, respuestaTexto });
+
   const { data: denunciaData, error: fetchError } = await supabase
     .from("denuncias")
     .select("*")
     .eq("iddenuncia", iddenuncia);
 
-  if (fetchError || !denunciaData.length) {
+  console.log("📦 Datos de denuncia obtenidos:", denunciaData);
+  console.log("🚨 Error al obtener denuncia:", fetchError);
+
+  if (fetchError || !denunciaData || denunciaData.length === 0) {
     throw new Error("Denuncia no encontrada o no pertenece al usuario");
   }
 
@@ -86,28 +91,39 @@ export const procesarRespuestaDenuncia = async (
       strategy = new RespuestaServicio();
       break;
     default:
+      console.error("❌ Tipo inválido:", denuncia.tipo);
       throw new Error("Tipo de denuncia no reconocido");
   }
 
   const context = new RespuestaContext(strategy);
+
   const respuestaFormateada = await context.procesar(denuncia, {
     respuesta: respuestaTexto,
   });
+
+  console.log("✅ Respuesta formateada:", respuestaFormateada);
 
   const { error: updateError } = await supabase
     .from("denuncias")
     .update([
       {
-        respuesta: respuestaFormateada.data.respuesta,
-        estado: respuestaFormateada.data.estado,
+        respuesta: respuestaFormateada.respuesta,
+        estado: respuestaFormateada.estado,
       },
     ])
     .eq("iddenuncia", iddenuncia);
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) {
+    console.error("❌ Error al actualizar denuncia:", updateError);
+    throw new Error(updateError.message);
+  }
+
+  console.log("🎉 Denuncia actualizada correctamente");
 
   return respuestaFormateada;
 };
+
+
 
 /*
 CREATE OR REPLACE FUNCTION cerrar_denuncia_si_responde()

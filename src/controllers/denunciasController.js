@@ -60,9 +60,10 @@ export const actualizarEstadoDenuncia = async(req, res) => {
     }
 }
 
-
 export const contestarDenuncia = async (req, res) => {
   try {
+    console.log("📥 Body recibido:", req.body); // <-- AÑADE ESTO
+
     const { iddenuncia, idcuenta } = req.params;
     const { respuesta } = req.body;
 
@@ -74,7 +75,9 @@ export const contestarDenuncia = async (req, res) => {
 
     res.status(200).json(resultado);
   } catch (error) {
+    console.error("❌ Error general:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
