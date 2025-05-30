@@ -1,5 +1,5 @@
 import * as denunciasService from "../service/denunciasService.js";
-import { AdministradorDenuncias } from "../services/AdministradorDenuncias.js";
+import { AdministradorDenuncias } from "../service/administradorDenuncias.js";
 
 const admin = new AdministradorDenuncias();
 
