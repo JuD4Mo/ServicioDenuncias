@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(cors()); 
 app.use(express.urlencoded({ extended: true }));
 
-
+app.use("/health", (req, res) => res.send("OK"));
 app.use("/denuncias", denunciasRouter);
 
 const PORT = 3003;
